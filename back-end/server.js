@@ -40,8 +40,8 @@ app.get('/branches', (req, res) => {
     connection.query('SELECT * FROM BranchMaster', (err, result, fields) => {
         if(err) {
             console.log(err);
-            return res.json({
-                status : 'fail',
+            return res.status(503).json({
+             status : 'fail',
                 message : 'query error'
             });
 
@@ -50,7 +50,7 @@ app.get('/branches', (req, res) => {
         //console.log(result);
         res.json({
             data : result,
-            status: 'sucess',
+            status: 'success',
             
         })
     })
@@ -58,17 +58,52 @@ app.get('/branches', (req, res) => {
 
 //create
 app.post('/branches', (req, res) =>{
+
+    if(req.body.branchCode.length != 3) {
+        return res.status(422).json({
+            status : 'fail',
+            message : 'invalid parameters'
+        });
+    }
+
+    if(req.body.branchName.length < 5) {
+        return res.status(422).json({
+            status : 'fail',
+            message : 'invalid parameters'
+        });
+    }
+
+    // if(req.body.branchName.length != 3) {
+    //     req.body.branchCode = null;
+    // }
     
     const branchData = {
-        BranchCode : req.body.branchCode, 
-        BranchName: req.body.branchName 
+        BranchCode : req.body.branchCode || null, 
+        BranchName: req.body.branchName || null
     };
+
+    console.log(branchData);
     
 
     connection.query('INSERT INTO BranchMaster SET ?', branchData, function(err, result){
       if(err) {
+
+        if(err.code == 'ER_DUP_ENTRY') {
+            return res.status(409).json({
+                status : 'fail',
+                message : ' duplicate value entered'
+            });
+        }
+
+        if(err.code == 'ER_BAD_NULL_ERROR') {
+            return res.status(422).json({
+                status : 'fail',
+                message : ' null value given'
+            });
+        }
+
           console.log(err);
-          return res.json({
+          return res.status(503).json({
               status : 'fail',
               message : 'service not available'
           });
@@ -76,7 +111,7 @@ app.post('/branches', (req, res) =>{
 
       console.log(result);
       res.json({
-              status : 'sucess',
+              status : 'success',
               message : `${branchData.BranchName}saved sucessfully`
           });
     });

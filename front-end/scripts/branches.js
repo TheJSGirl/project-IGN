@@ -2,90 +2,124 @@
 
 var baseUrl = 'http://localhost:3000/branches';
 
-// saving data
-$('#submit-btn').click(addData);
+var updateSuccessFunction = function(response){
+        // console.log('response ==>', response);
 
-// function to adding data
-function addData(){
-    $.post(baseUrl, function(response){
-        console.log('myresponse====>', response);
+        if(response.status != 'success'){
+            return alert('fail to get data');
+        }
+        // append response in the branch table 
+            // find the table 
         var tbody = $('#branchTable').find('tbody');
-        console.log(tbody);
+        // console.log(tbody);
+
+        var rows = '';
         
-       
+        $(response.data).each(function(index, data){
+            //console.log('value ==> ', data);
+            $(data).each(function(index2, value){
+                // console.log('value ==> ', value);
+                rows +=`<tr>
+                        <td>${value.BranchCode}</td>
+                        <td>${value.BranchName}</td>
+                    </tr>`;
+            });
+        });
+        // console.log(rows);
+        $(tbody).html(rows);
         
-    });
 };
 
 
 // function to get all the records 
 function updateTable() {
-    // fetch data from the api 
-    $.get(baseUrl, function(response){
-        console.log('response ==>', response);
-        // append response in the branch table 
-            // find the table 
-        var tbody = $('#branchTable').find('tbody');
-        console.log(tbody);
-        
-        $(response.data).each(function(index, data){
-            //console.log('value ==> ', data);
-            $(data).each(function(index2, value){
-                console.log('value ==> ', value);
-                $(tbody).append(
-                    `<tr>
-                        <td>${value.BranchCode}</td>
-                        <td>${value.BranchName}</td>
-                    </tr>`
-                );
-            });
-        });
-        
-    })
-    .fail(function() {
-        console.log('err');
+    
+    ajaxWrapper('GET', baseUrl, null,  updateSuccessFunction, function() {
+        return console.log('failed to get data');
+    }, function(){
+       
     });
 };
 
-function saveData() {
-     $.post(baseUrl,'', function(response) {
-       if(response.status != 'success') {
-           return alert('failed to save');
-       }
-   });
+var saveDataFunction  = function(response) {
+    console.log(response);
+
+    if(response.status != 'success') {
+        return console.log(response.message);
+    }
+    else{
+        return alert('data saved');
+    }   
+}
+
+function saveData(data) {
+    ajaxWrapper('POST', baseUrl, data, saveDataFunction, function(response){
+        //alert(JSON.parse(response.responseText).message);
+        return console.log(response);
+        
+    }, function(){
+        updateTable();
+    });
+};
+
+function ajaxWrapper(reqType, reqURL, data,successCBFunction, errFunction, reqCompleteFunction){
+    $.ajax({
+        type:reqType,
+        url:reqURL,
+        data:data,
+        success:successCBFunction,
+        error:errFunction,
+        complete : reqCompleteFunction,
+        statusCode: {
+            404: function() {
+                return alert( "page not found" );
+            },
+            
+            422 : function(){
+                return alert('wrong parameters');
+            }
+        }
+    });
 };
 
 
 $(document).ready(function(){
     console.log( "ready!" );
-    // updateTable();
-    // var inputs = $('#myform').find('input');
-    // console.log('branch==>',inputs);
-    // var branchCode = inputs[0].value;
-    // console.log('value ==> ', branchCode);
 
-    // var formData = {
-    //     BranchCode:branchCode, 
-    //     BranchName:branchName
-    // };
-    var input2 = $('#myForm').find('input')[1];
     var input1 = $('#myForm').find('input')[0];
+    var input2 = $('#myForm').find('input')[1];
 
-    $('#myForm').keyup(function(){
-        // console.log('running');testing
-        if((input1.value != '') && (input2.value != '') || (input1.value <= 3) && (input2.value <=5)){
-            $('#submit-btn').removeAttr('disabled');
+    $(input1).change(function(){
+        if($(input1).val().length == 3 && $(input2).val() != '') {
+            $('#submit-btn').prop('disabled', false);
         }
-        else{
-            $('#submit-btn').attr('disabled');
-            }
+        else {
+            $('#submit-btn').prop('disabled', true);
+        }
+    });
+
+    $(input2).change(function(){
+        if($(input1).val().length == 3 && $(input2).val() != '') {
+            $('#submit-btn').prop('disabled', false);
+        }
+        else {
+            $('#submit-btn').prop('disabled', true);
+        }
     });
     
-    $('#myForm').submit(function(e){
+    $('#submit-btn').click(function(e){
+        var data = {
+            branchCode : $(input1).val(),
+            branchName : $(input2).val()
+        }
+
+        // console.log(data);
+
         e.preventDefault();
+
         console.log('form submited');
-        saveData();
-        updateTable();
+        saveData(data);
+        
     });
 
     updateTable();
