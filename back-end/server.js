@@ -117,6 +117,28 @@ app.post('/branches', (req, res) =>{
     });
 });
 
+//route for courses
+
+app.get('/courses', (req, res)=>{
+    connection.query('SELECT * FROM  Courses ',  (err, result, fields)=>{
+      if(err) {
+            console.log(err);
+            return res.status(503).json({
+             status : 'fail',
+                message : 'query error'
+            });
+
+        }
+
+        //console.log(result);
+        res.json({
+            data : result,
+            status: 'success',
+            
+        })
+    })
+});
+
 
 app.listen(3000, ()=>{
     console.log('listening to port:3000');
